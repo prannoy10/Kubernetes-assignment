@@ -1,1 +1,7 @@
+There are Certain cases when you want a pod to run on each and every node in the cluster and each node needs to run exactly one instance of the pod.
+Those cases include infrastructure-related pods that perform system-level operations.For example:log collector and a resource monitor on every node.
+kube-proxy process, which needs to run on all nodes to make services work.
 
+A DaemonSet deploys pods to all nodes in the cluster, unless you specify that the pods should only run on a subset of all the nodes.
+This is done by specifying the node-Selector property in the pod template, which is part of the DaemonSet definition.
+Look at the ssd-monitor-daemonset.yaml and exercise in controllers.bash
