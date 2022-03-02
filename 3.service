@@ -1,0 +1,32 @@
+
+clusterIP  is accessible only within the cluster(master+worker nodes). This is the limitation when you want your
+client to access the application.
+
+To make the APP accessible outside of the organization, we will need to make different type of service which is Nodeport.
+ 
+NodePort: Exposes the service on each Node’s IP at a static port (the NodePort). 
+A ClusterIP service, to which the NodePort service will route, is automatically created.
+ You’ll be able to contact the NodePort service, from outside the cluster, by requesting <NodeIP>:<NodePort>.
+
+Now we will expose the IP to the outside world using Nodeport service.
+
+Nodeport=clusterIP+exposes on static port  ie superset of clusterIP
+
+[root@ip-172-31-7-56 05-services]# cat kubia-svc-nodeport.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubia-nodeport
+spec:
+  type: NodePort   #We have mentioned type =NodePort service
+  ports:
+  - port: 80
+    targetPort: 8080
+    nodePort: 30123
+  selector:
+    app: kubia
+  
+  
+port: 80 This port should be used with clusterIP
+targetPort: 8080 This port should be used with Pod IP
+nodePort: 30123 This port should be used with node IP.
