@@ -1,1 +1,83 @@
+[root@ip-172-31-7-56 09-deployments]# kubectl describe deploy kubia
+Name:                   kubia
+Namespace:              prannoy
+CreationTimestamp:      Mon, 07 Feb 2022 16:29:16 +0000
+Labels:                 <none>
+Annotations:            deployment.kubernetes.io/revision: 1
+Selector:               app=kubia
+Replicas:               3 desired | 3 updated | 3 total | 3 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        10      #Now this has been modified to 10sec.
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:  app=kubia
+  Containers:
+   nodejs:
+    Image:        luksa/kubia:v1
+    Port:         <none>
+    Host Port:    <none>
+    Environment:  <none>
+    Mounts:       <none>
+  Volumes:        <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Available      True    MinimumReplicasAvailable
+  Progressing    True    NewReplicaSetAvailable
+OldReplicaSets:  <none>
+NewReplicaSet:   kubia-59d857b444 (3/3 replicas created)
+Events:
+  Type    Reason             Age   From                   Message
+  ----    ------             ----  ----                   -------
+  Normal  ScalingReplicaSet  13m   deployment-controller  Scaled up replica set kubia-59d857b444 to 3
+[root@ip-172-31-7-56 09-deployments]#
 
+Now what if we want to update image version v1 to v2.
+1 way is to go to yaml file and make update version and then apply it.
+or use the below command.
+
+[root@ip-172-31-7-56 09-deployments]# kubectl set image deployment kubia nodejs=luksa/kubia:v2
+deployment.apps/kubia image updated
+
+# This means go to deployment "kubia", go to the container "nodejs" and in the container update this image.
+This is rolling update. Benefit of rolling update is there is no downtime.
+
+[root@ip-172-31-7-56 09-deployments]# kubectl get deployment
+NAME    READY   UP-TO-DATE   AVAILABLE   AGE
+kubia   4/3     1            3           15m
+[root@ip-172-31-7-56 09-deployments]# kubectl get deploy
+NAME    READY   UP-TO-DATE   AVAILABLE   AGE
+kubia   4/3     3            3           16m
+[root@ip-172-31-7-56 09-deployments]# kubectl get po --show-labels
+NAME                     READY   STATUS        RESTARTS   AGE   LABELS
+kubia-59d857b444-6k8z7   1/1     Terminating   0          16m   app=kubia,pod-template-hash=59d857b444
+kubia-59d857b444-pml9d   1/1     Terminating   0          16m   app=kubia,pod-template-hash=59d857b444
+kubia-59d857b444-tw88h   1/1     Terminating   0          16m   app=kubia,pod-template-hash=59d857b444
+kubia-7d5c456ffc-4m8kn   1/1     Running       0          43s   app=kubia,pod-template-hash=7d5c456ffc
+kubia-7d5c456ffc-hpzn4   1/1     Running       0          28s   app=kubia,pod-template-hash=7d5c456ffc
+kubia-7d5c456ffc-stmt2   1/1     Running       0          16s   app=kubia,pod-template-hash=7d5c456ffc
+[root@ip-172-31-7-56 09-deployments]#
+
+NAME    READY   UP-TO-DATE   AVAILABLE   AGE
+kubia   3/3     3            3           19m
+[root@ip-172-31-7-56 09-deployments]# kubectl get po --show-labels
+NAME                     READY   STATUS    RESTARTS   AGE     LABELS
+kubia-7d5c456ffc-4m8kn   1/1     Running   0          4m5s    app=kubia,pod-template-hash=7d5c456ffc
+kubia-7d5c456ffc-hpzn4   1/1     Running   0          3m50s   app=kubia,pod-template-hash=7d5c456ffc
+kubia-7d5c456ffc-stmt2   1/1     Running   0          3m38s   app=kubia,pod-template-hash=7d5c456ffc
+[root@ip-172-31-7-56 09-deployments]# kubectl get rs
+NAME               DESIRED   CURRENT   READY   AGE
+kubia-59d857b444   0         0         0       19m
+kubia-7d5c456ffc   3         3         3       4m9s
+[root@ip-172-31-7-56 09-deployments]#
+
+We see new replica set is create and thus further pods(with 10 sec gap).
+
+[root@ip-172-31-7-56 09-deployments]# kubectl get svc
+NAME    TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+kubia   ClusterIP   10.104.74.244   <none>        80/TCP    22m
+[root@ip-172-31-7-56 09-deployments]# curl 10.104.74.244:80
+This is v2 running in pod kubia-7d5c456ffc-hpzn4
+[root@ip-172-31-7-56 09-deployments]#
+
+Now we can see new version application ran.
